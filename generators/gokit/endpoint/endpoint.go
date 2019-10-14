@@ -1,11 +1,10 @@
 package endpoint
 
 import (
-    "fmt"
-    "html/template"
-    "path"
+	"path"
+	"text/template"
 
-    "github.com/tartale/go-kitt/generators"
+	"github.com/tartale/go-kitt/generators"
 )
 
 func Generate(parsedSources generators.ParsedSourceData) error {
@@ -14,14 +13,14 @@ func Generate(parsedSources generators.ParsedSourceData) error {
 	if err != nil {
 		return err
 	}
-	tmpl := template.Must(template.ParseFiles(path.Join(thisDir, "endpoint.tmpl")))
+	tmpl := template.Must(template.ParseFiles(path.Join(thisDir, "endpoint.tmpl"))).
+		Funcs(generators.TemplateHelpers())
 
 	for _, key := range parsedSources.Keys {
-	    parsedSource := parsedSources.Map[key]
-	    fmt.Println(key)
-	    fmt.Println(parsedSource)
-        tmpl = tmpl
-    }
+		parsedSource := parsedSources.Map[key]
+		tmpl = tmpl
+		parsedSource = parsedSource
+	}
 
 	return nil
 }

@@ -1,0 +1,5 @@
+{{ range .Interfaces }}
+{{ if hasGoKitAnnotation . }}
+{{ "awesome" }}
+{{ end }}
+{{ end }}

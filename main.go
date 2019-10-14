@@ -6,6 +6,8 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/MarcGrol/golangAnnotations/generator"
+	"github.com/MarcGrol/golangAnnotations/model"
 	"github.com/MarcGrol/golangAnnotations/parser"
 
 	"github.com/tartale/go-kitt/external/errorz"
@@ -26,6 +28,7 @@ func main() {
 	} else {
 		panic(fmt.Sprintf("usage: %s [<path>]", os.Args[0]))
 	}
+	inputPath = "/Users/tom.artale/Projects/go-beverage/domain"
 
 	parsedSourceMap := parseAll(inputPath)
 	parsedSources := generators.ParsedSourceData{
@@ -47,6 +50,7 @@ func main() {
 
 func parseAll(inputPath string) generators.ParsedSourceMap {
 
+	excludeMatchPattern := "^" + generator.GenfilePrefix + ".*.go$"
 	result := make(generators.ParsedSourceMap)
 
 	info, err := os.Stat(inputPath)
@@ -62,9 +66,11 @@ func parseAll(inputPath string) generators.ParsedSourceMap {
 		if !info.IsDir() {
 			return nil
 		}
-		parsedSources, err := parser.New().ParseSourceDir(path, "^.*.go$", "")
+		parsedSources, err := parser.New().ParseSourceDir(path, "^.*.go$", excludeMatchPattern)
 		if err == nil {
-			result[path] = parsedSources
+			if !isEmpty(parsedSources) {
+				result[path] = parsedSources
+			}
 		} else {
 			fmt.Fprintln(os.Stderr, err)
 		}
@@ -76,4 +82,12 @@ func parseAll(inputPath string) generators.ParsedSourceMap {
 	}
 
 	return result
+}
+
+func isEmpty(parsedSources model.ParsedSources) bool {
+	return len(parsedSources.Operations) == 0 &&
+		len(parsedSources.Interfaces) == 0 &&
+		len(parsedSources.Typedefs) == 0 &&
+		len(parsedSources.Structs) == 0 &&
+		len(parsedSources.Enums) == 0
 }
