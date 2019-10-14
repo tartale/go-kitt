@@ -3,7 +3,7 @@
 
 ### Go-Kit Two Thousand
 
-Generates go-kit boilerplate code from annotations provided in comments.
+Generates go-kit boilerplate code from annotations provided the comments of the business logic.
 
 ## Getting Started
 
