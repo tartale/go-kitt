@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/MarcGrol/golangAnnotations/parser"
+
 	"github.com/tartale/go-kitt/external/errorz"
 	"github.com/tartale/go-kitt/generators"
 	"github.com/tartale/go-kitt/generators/gokit"
@@ -14,7 +15,6 @@ import (
 
 func main() {
 	var inputPath string
-	fmt.Println(os.Args)
 	if len(os.Args) == 1 {
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -27,7 +27,11 @@ func main() {
 		panic(fmt.Sprintf("usage: %s [<path>]", os.Args[0]))
 	}
 
-	parsedSources := parseAll(inputPath)
+	parsedSourceMap := parseAll(inputPath)
+	parsedSources := generators.ParsedSourceData{
+		Map:  parsedSourceMap,
+		Keys: parsedSourceMap.Keys(),
+	}
 
 	var errs errorz.Errors
 
@@ -43,7 +47,7 @@ func main() {
 
 func parseAll(inputPath string) generators.ParsedSourceMap {
 
-	var result generators.ParsedSourceMap
+	result := make(generators.ParsedSourceMap)
 
 	info, err := os.Stat(inputPath)
 	if err != nil {
@@ -51,8 +55,7 @@ func parseAll(inputPath string) generators.ParsedSourceMap {
 	}
 
 	if !info.IsDir() {
-		parent := path.Dir(inputPath)
-		return parseAll(parent)
+		inputPath = path.Dir(inputPath)
 	}
 
 	err = filepath.Walk(inputPath, func(path string, info os.FileInfo, err error) error {
@@ -60,7 +63,11 @@ func parseAll(inputPath string) generators.ParsedSourceMap {
 			return nil
 		}
 		parsedSources, err := parser.New().ParseSourceDir(path, "^.*.go$", "")
-		result[path] = parsedSources
+		if err == nil {
+			result[path] = parsedSources
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+		}
 
 		return nil
 	})

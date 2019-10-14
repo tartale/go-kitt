@@ -25,8 +25,8 @@ Generates go-kit boilerplate code from annotations provided the comments of the 
 * Add a library dependency
   * `go mod download "github.com/org/repo"`
 * Add a tool dependency
-  * Add an import to `tools/tools.go` (it won't compile; ignore)
-  * Add an install line to `tools/tools.go`
+  * Add an import to `tools/tools.go` (it won't compile; just ignore the errors)
+  * Add an `//go:generate` install line to `tools/tools.go`
 
 ### TODO
 

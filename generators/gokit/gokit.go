@@ -8,7 +8,7 @@ import (
 	"github.com/tartale/go-kitt/generators/gokit/logger"
 )
 
-func Generate(parsedSources generators.ParsedSourceMap) error {
+func Generate(parsedSources generators.ParsedSourceData) error {
 
 	var errs errorz.Errors
 
