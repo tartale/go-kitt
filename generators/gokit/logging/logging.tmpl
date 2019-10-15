@@ -16,6 +16,11 @@ import (
   "github.com/go-kit/kit/log"
 )
 
+type {{$interface.Name}}LoggingMiddleware struct {
+  logger log.Logger
+  next   {{$interface.Name}}
+}
+
 {{-       end }}
 {{-       $inputArgs := FieldNames $method.InputArgs }}
 {{-       $outputArgs := FieldNames $method.OutputArgs }}
