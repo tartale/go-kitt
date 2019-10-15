@@ -1,4 +1,5 @@
 {{- $interface := .Interface }}
+{{- $middlewareName := (print $interface.Name "LoggingMiddleware") }}
 {{- $firstTime := true }}
 {{- range $interface.Methods }}
 {{-     $method := . }}
@@ -16,7 +17,7 @@ import (
   "github.com/go-kit/kit/log"
 )
 
-type {{$interface.Name}}LoggingMiddleware struct {
+type {{$middlewareName}} struct {
   logger log.Logger
   next   {{$interface.Name}}
 }
@@ -25,7 +26,7 @@ type {{$interface.Name}}LoggingMiddleware struct {
 {{-       $inputArgs := FieldNames $method.InputArgs }}
 {{-       $outputArgs := FieldNames $method.OutputArgs }}
 
-func (mw loggingMiddleware) {{MethodSignature $method}} {
+func (mw {{$middlewareName}}) {{MethodSignature $method}} {
 
   defer func(begin time.Time) {
 		mw.logger.Log(
