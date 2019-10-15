@@ -1,0 +1,20 @@
+{{- define "body"}}
+{{- $method := get . "Method" }}
+{{- $middlewareName := get . "MiddlewareName" }}
+{{- $inputArgs := FieldNames $method.InputArgs | join ", " }}
+{{- $outputArgs := FieldNames $method.OutputArgs | join ", " }}
+func (mw {{$middlewareName}}) {{MethodSignature $method}} {
+
+  defer func(begin time.Time) {
+		mw.logger.Log(
+			"method", "{{$method.Name}}",
+			"output", fmt.Sprintf("%v", []interface{}{ {{$outputArgs}} }),
+			"took", time.Since(begin),
+		)
+	}(time.Now())
+
+	{{$outputArgs}} = mw.next.{{$method.Name}}({{$inputArgs}})
+
+	return
+}
+{{ end }}

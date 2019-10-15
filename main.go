@@ -6,7 +6,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/MarcGrol/golangAnnotations/generator"
 	"github.com/MarcGrol/golangAnnotations/model"
 	"github.com/MarcGrol/golangAnnotations/parser"
 
@@ -51,7 +50,7 @@ func main() {
 func parseAll(inputPath string) generators.ParsedSourceMap {
 
 	const (
-		excludeMatchPattern = "^" + generator.GenfilePrefix + ".*.go$"
+		excludeMatchPattern = "^generated.*.go$"
 		includeMatchPattern = "^.*.go$"
 	)
 
@@ -71,12 +70,12 @@ func parseAll(inputPath string) generators.ParsedSourceMap {
 			return nil
 		}
 		parsedSources, err := parser.New().ParseSourceDir(path, includeMatchPattern, excludeMatchPattern)
-		if err == nil {
-			if !isEmpty(parsedSources) {
-				result[path] = parsedSources
-			}
-		} else {
+		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			return nil
+		}
+		if !isEmpty(parsedSources) {
+			result[path] = parsedSources
 		}
 
 		return nil

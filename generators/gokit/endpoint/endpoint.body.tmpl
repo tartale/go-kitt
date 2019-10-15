@@ -1,0 +1,19 @@
+{{- define "body" }}
+{{- $method := . }}
+{{- $inputArgs := FieldCtxFilter $method.InputArgs }}
+{{- $outputArgs := FieldCtxFilter $method.OutputArgs }}
+
+type {{$method.Name}}Request struct {
+  {{- $inputDeclarations := FieldDeclarations $inputArgs }}
+  {{- range $inputDeclarations }}
+  {{ . }}
+  {{- end }}
+}
+
+type {{$method.Name}}Response struct {
+  {{- $outputDeclarations := FieldDeclarations $outputArgs }}
+  {{- range $outputDeclarations }}
+  {{ . }}
+  {{- end }}
+}
+{{end }}

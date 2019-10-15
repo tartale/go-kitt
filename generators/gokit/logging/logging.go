@@ -7,6 +7,7 @@ import (
 
 	"github.com/MarcGrol/golangAnnotations/model"
 
+	"github.com/tartale/go-kitt/external/errorz"
 	"github.com/tartale/go-kitt/generators"
 )
 
@@ -17,8 +18,9 @@ func Generate(parsedSourceData generators.ParsedSourceData) error {
 		return err
 	}
 	tmpl := template.New("logging.tmpl").Funcs(generators.TemplateHelpers())
-	tmpl = template.Must(tmpl.ParseFiles(path.Join(thisDir, "logging.tmpl")))
+	tmpl = template.Must(tmpl.ParseGlob(path.Join(thisDir, "logging*tmpl")))
 
+	var errs errorz.Errors
 	for _, key := range parsedSourceData.Keys {
 		parsedSource := parsedSourceData.Map[key]
 		for _, intf := range parsedSource.Interfaces {
@@ -27,8 +29,15 @@ func Generate(parsedSourceData generators.ParsedSourceData) error {
 			}{
 				Interface: intf,
 			}
-			_ = tmpl.Execute(os.Stdout, data)
+			err := tmpl.Execute(os.Stdout, data)
+			if err != nil {
+				errs = append(errs, err)
+			}
 		}
+	}
+
+	if len(errs) > 0 {
+		return errs
 	}
 
 	return nil

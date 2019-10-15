@@ -1,3 +1,11 @@
-{{ range .Interfaces }}
-{{ .Name }}
-{{ end }}
+{{- $interface := .Interface }}
+{{- $endpointName := (print $interface.Name "Endpoint") }}
+{{- $generateHeader := true }}
+{{- range $interface.Methods }}
+{{-     $method := . }}
+{{-     if $generateHeader }}
+{{-       template "header" $interface }}
+{{-       $generateHeader = false }}
+{{-     end }}
+{{-     template "body" $method }}
+{{- end }}

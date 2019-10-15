@@ -1,0 +1,11 @@
+{{- define "header" }}
+{{- $interface := . }}
+{{- HeaderComment }}
+package {{ $interface.PackageName }}
+
+import (
+  "context"
+
+  "github.com/go-kit/kit/endpoint"
+)
+{{end }}

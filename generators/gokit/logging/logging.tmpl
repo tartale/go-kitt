@@ -1,45 +1,14 @@
 {{- $interface := .Interface }}
+{{- $generateHeader := true }}
 {{- $middlewareName := (print $interface.Name "LoggingMiddleware") }}
-{{- $firstTime := true }}
 {{- range $interface.Methods }}
 {{-     $method := . }}
 {{-     $shouldGenerate := ShouldGenerateLogging $interface $method }}
 {{-     if $shouldGenerate }}
-{{-       if $firstTime }}
-{{-         $firstTime = false }}
-
-package {{ $interface.PackageName }}
-
-import (
-  "context"
-  "time"
-
-  "github.com/go-kit/kit/log"
-)
-
-type {{$middlewareName}} struct {
-  logger log.Logger
-  next   {{$interface.Name}}
-}
-
+{{-       if $generateHeader }}
+{{-         template "header" (dict "Interface" $interface "MiddlewareName" $middlewareName) }}
+{{-         $generateHeader = false }}
 {{-       end }}
-{{-       $inputArgs := FieldNames $method.InputArgs }}
-{{-       $outputArgs := FieldNames $method.OutputArgs }}
-
-func (mw {{$middlewareName}}) {{MethodSignature $method}} {
-
-  defer func(begin time.Time) {
-		mw.logger.Log(
-			"method", "{{$method.Name}}",
-			"output", fmt.Sprintf("%v", []interface{}{ {{$outputArgs}} }),
-			"took", time.Since(begin),
-		)
-	}(time.Now())
-
-	{{$outputArgs}} = mw.next.{{$method.Name}}({{$inputArgs}})
-
-	return
-}
-
+{{-       template "body" (dict "Method" $method "MiddlewareName" $middlewareName) }}
 {{-     end }}
 {{- end }}
