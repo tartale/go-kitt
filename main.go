@@ -50,7 +50,11 @@ func main() {
 
 func parseAll(inputPath string) generators.ParsedSourceMap {
 
-	excludeMatchPattern := "^" + generator.GenfilePrefix + ".*.go$"
+	const (
+		excludeMatchPattern = "^" + generator.GenfilePrefix + ".*.go$"
+		includeMatchPattern = "^.*.go$"
+	)
+
 	result := make(generators.ParsedSourceMap)
 
 	info, err := os.Stat(inputPath)
@@ -66,7 +70,7 @@ func parseAll(inputPath string) generators.ParsedSourceMap {
 		if !info.IsDir() {
 			return nil
 		}
-		parsedSources, err := parser.New().ParseSourceDir(path, "^.*.go$", excludeMatchPattern)
+		parsedSources, err := parser.New().ParseSourceDir(path, includeMatchPattern, excludeMatchPattern)
 		if err == nil {
 			if !isEmpty(parsedSources) {
 				result[path] = parsedSources

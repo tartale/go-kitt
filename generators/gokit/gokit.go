@@ -5,7 +5,7 @@ import (
 	"github.com/tartale/go-kitt/generators"
 	"github.com/tartale/go-kitt/generators/gokit/authz"
 	"github.com/tartale/go-kitt/generators/gokit/endpoint"
-	"github.com/tartale/go-kitt/generators/gokit/logger"
+	"github.com/tartale/go-kitt/generators/gokit/logging"
 )
 
 func Generate(parsedSources generators.ParsedSourceData) error {
@@ -22,7 +22,7 @@ func Generate(parsedSources generators.ParsedSourceData) error {
 		errs = append(errs, err)
 	}
 
-	err = logger.Generate(parsedSources)
+	err = logging.Generate(parsedSources)
 	if err != nil {
 		errs = append(errs, err)
 	}

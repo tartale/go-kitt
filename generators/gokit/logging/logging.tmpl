@@ -1,0 +1,39 @@
+{{- $interface := .Interface }}
+{{- $firstTime := true }}
+{{- range $interface.Methods }}
+{{-     $method := . }}
+{{-     $shouldGenerate := ShouldGenerateLogging $interface $method }}
+{{-     if $shouldGenerate }}
+{{-       if $firstTime }}
+{{-         $firstTime = false }}
+
+package {{ $interface.PackageName }}
+
+import (
+  "context"
+  "time"
+
+  "github.com/go-kit/kit/log"
+)
+
+{{-       end }}
+{{-       $inputArgs := FieldNames $method.InputArgs }}
+{{-       $outputArgs := FieldNames $method.OutputArgs }}
+
+func (mw loggingMiddleware) {{MethodSignature $method}} {
+
+  defer func(begin time.Time) {
+		mw.logger.Log(
+			"method", "{{$method.Name}}",
+			"output", fmt.Sprintf("%v" []interface{}{ {{$outputArgs}} }),
+			"took", time.Since(begin),
+		)
+	}(time.Now())
+
+	{{$outputArgs}} = mw.next.{{$method.Name}}({{$inputArgs}})
+
+	return
+}
+
+{{-     end }}
+{{- end }}
