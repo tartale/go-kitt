@@ -31,7 +31,7 @@ func (mw {{$middlewareName}}) {{MethodSignature $method}} {
   defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "{{$method.Name}}",
-			"output", fmt.Sprintf("%v" []interface{}{ {{$outputArgs}} }),
+			"output", fmt.Sprintf("%v", []interface{}{ {{$outputArgs}} }),
 			"took", time.Since(begin),
 		)
 	}(time.Now())

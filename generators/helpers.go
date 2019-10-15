@@ -68,7 +68,15 @@ func MethodSignature(obj model.Operation) string {
 }
 
 func FieldDeclaration(field model.Field) string {
-	return fmt.Sprintf("%s %s", field.Name, field.TypeName)
+	var fieldModifier string
+	if field.IsSlice {
+		fieldModifier = fmt.Sprintf("%s%s", fieldModifier, "[]")
+	}
+	if field.IsPointer {
+		fieldModifier = fmt.Sprintf("%s%s", fieldModifier, "*")
+	}
+	fieldType := fmt.Sprintf("%s%s", fieldModifier, field.TypeName)
+	return fmt.Sprintf("%s %s", field.Name, fieldType)
 }
 
 func FieldDeclarations(fields []model.Field) string {
