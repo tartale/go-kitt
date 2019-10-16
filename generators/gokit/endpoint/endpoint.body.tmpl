@@ -1,19 +1,38 @@
 {{- define "body" }}
-{{- $method := . }}
-{{- $inputArgs := FieldCtxFilter $method.InputArgs }}
-{{- $outputArgs := FieldCtxFilter $method.OutputArgs }}
-
+{{- $interface := get . "Interface" }}
+{{- $method := get . "Method" }}
+{{- $inputArgs := FieldsNoContext $method.InputArgs }}
+{{- $outputArgs := $method.OutputArgs }}
+{{- $outputDeclarations := FieldDeclarations $outputArgs }}
+{{- $outputNames := FieldNames $method.OutputArgs }}
+{{- $outputNameList := $outputNames | join ", " }}
+{{- $outputErrField := FieldsError $method.OutputArgs }}
 type {{$method.Name}}Request struct {
-  {{- $inputDeclarations := FieldDeclarations $inputArgs }}
-  {{- range $inputDeclarations }}
-  {{ . }}
-  {{- end }}
+    {{- $inputDeclarations := FieldDeclarations $inputArgs }}
+    {{- range $inputDeclarations }}
+    {{ . }}
+    {{- end }}
 }
 
 type {{$method.Name}}Response struct {
-  {{- $outputDeclarations := FieldDeclarations $outputArgs }}
-  {{- range $outputDeclarations }}
-  {{ . }}
-  {{- end }}
+    {{- range $outputDeclarations }}
+    {{ . }}
+    {{- end }}
+}
+
+func Make{{$method.Name}}Response({{$outputDeclarations | join ", " }}) {{$method.Name}}Response {
+  var result {{$method.Name}}Response
+  {{- range $outputNames }}
+  result.{{.}} = {{.}}
+  {{- end}}
+
+  return result
+}
+
+func Make{{$method.Name}}Endpoint(svc {{$interface.Name}}) endpoint.Endpoint {
+    return func(ctx context.Context, request interface{}) (interface{}, error) {
+        {{$outputNameList}} := svc.{{$method.Name}}(ctx)
+        return Make{{$method.Name}}Response({{$outputNameList}}), {{or $outputErrField.Name "nil" }}
+    }
 }
 {{end }}

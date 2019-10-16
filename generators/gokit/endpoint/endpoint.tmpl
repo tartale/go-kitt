@@ -7,5 +7,5 @@
 {{-       template "header" $interface }}
 {{-       $generateHeader = false }}
 {{-     end }}
-{{-     template "body" $method }}
+{{-     template "body" (dict "Interface" $interface "Method" $method) }}
 {{- end }}

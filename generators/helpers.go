@@ -31,7 +31,8 @@ func TemplateHelpers() template.FuncMap {
 		"FieldDeclaration":      FieldDeclaration,
 		"FieldDeclarations":     FieldDeclarations,
 		"FieldNames":            FieldNames,
-		"FieldCtxFilter":        FieldCtxFilter,
+		"FieldsNoContext":       FieldsNoContext,
+		"FieldsError":           FieldsError,
 	}
 	for k, v := range sprig.GenericFuncMap() {
 		result[k] = v
@@ -99,6 +100,19 @@ func MethodSignature(obj model.Operation) string {
 		strings.Join(FieldDeclarations(obj.OutputArgs), ", "))
 }
 
+func FieldAutoName(field model.Field, index int) model.Field {
+	if field.Name != "" {
+		return field
+	}
+	if field.TypeName == "error" {
+		field.Name = "err"
+	} else {
+		field.Name = fmt.Sprintf("v%d", index)
+	}
+
+	return field
+}
+
 func FieldDeclaration(field model.Field, index int) string {
 	var fieldModifier string
 	if field.IsSlice {
@@ -108,9 +122,7 @@ func FieldDeclaration(field model.Field, index int) string {
 		fieldModifier = fmt.Sprintf("%s%s", fieldModifier, "*")
 	}
 	fieldType := fmt.Sprintf("%s%s", fieldModifier, field.TypeName)
-	if field.Name == "" {
-		field.Name = fmt.Sprintf("v%d", index)
-	}
+	field = FieldAutoName(field, index)
 
 	return fmt.Sprintf("%s %s", field.Name, fieldType)
 }
@@ -127,16 +139,14 @@ func FieldDeclarations(fields []model.Field) []string {
 func FieldNames(fields []model.Field) []string {
 	var result []string
 	for i, field := range fields {
-		if field.Name == "" {
-			field.Name = fmt.Sprintf("v%d", i)
-		}
+		field = FieldAutoName(field, i)
 		result = append(result, field.Name)
 	}
 
 	return result
 }
 
-func FieldCtxFilter(fields []model.Field) []model.Field {
+func FieldsNoContext(fields []model.Field) []model.Field {
 	var result []model.Field
 	for _, field := range fields {
 		if field.TypeName == "context.Context" {
@@ -145,4 +155,14 @@ func FieldCtxFilter(fields []model.Field) []model.Field {
 		result = append(result, field)
 	}
 	return result
+}
+
+func FieldsError(fields []model.Field) *model.Field {
+	for i, field := range fields {
+		if field.TypeName == "error" {
+			field = FieldAutoName(field, i)
+			return &field
+		}
+	}
+	return nil
 }
