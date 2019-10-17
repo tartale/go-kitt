@@ -1,38 +1,49 @@
 {{- define "body" }}
 {{- $interface := get . "Interface" }}
 {{- $method := get . "Method" }}
-{{- $inputArgs := FieldsNoContext $method.InputArgs }}
-{{- $outputArgs := $method.OutputArgs }}
-{{- $outputDeclarations := FieldDeclarations $outputArgs }}
-{{- $outputNames := FieldNames $method.OutputArgs }}
-{{- $outputNameList := $outputNames | join ", " }}
-{{- $outputErrField := FieldsError $method.OutputArgs }}
+{{- $namedInputArgs := FieldsAutoName $method.InputArgs "input" }}
+{{- $namedInputArgsNoCtx := FieldsNoContext $namedInputArgs }}
+{{- $inputDeclarations := FieldDeclarations $namedInputArgsNoCtx }}
+{{- $inputNameList := FieldNames $namedInputArgs | join ", " }}
+{{- $inputNameObjList := FieldNames $namedInputArgsNoCtx | prefixAll "obj." | join ", "}}
+{{- $namedOutputArgs := FieldsAutoName $method.OutputArgs "output" }}
+{{- $outputDeclarations := FieldDeclarations $namedOutputArgs }}
+{{- $outputNameList := FieldNames $namedOutputArgs | join ", " }}
+{{- $outputErrField := FieldsFirstError $namedOutputArgs }}
 type {{$method.Name}}Request struct {
-    {{- $inputDeclarations := FieldDeclarations $inputArgs }}
-    {{- range $inputDeclarations }}
-    {{ . }}
-    {{- end }}
+  {{- range $inputDeclarations }}
+  {{ . }}
+  {{- end }}
 }
 
 type {{$method.Name}}Response struct {
-    {{- range $outputDeclarations }}
-    {{ . }}
-    {{- end }}
+  {{- range $outputDeclarations }}
+  {{ . }}
+  {{- end }}
 }
 
 func Make{{$method.Name}}Response({{$outputDeclarations | join ", " }}) {{$method.Name}}Response {
   var result {{$method.Name}}Response
-  {{- range $outputNames }}
-  result.{{.}} = {{.}}
+  {{- range $namedOutputArgs }}
+  result.{{.Name}} = {{.Name}}
   {{- end}}
 
   return result
 }
 
 func Make{{$method.Name}}Endpoint(svc {{$interface.Name}}) endpoint.Endpoint {
-    return func(ctx context.Context, request interface{}) (interface{}, error) {
-        {{$outputNameList}} := svc.{{$method.Name}}(ctx)
-        return Make{{$method.Name}}Response({{$outputNameList}}), {{or $outputErrField.Name "nil" }}
-    }
+  return func(ctx context.Context, request interface{}) (interface{}, error) {
+    {{- if $inputNameObjList }}
+    obj := request.({{$method.Name}}Request)
+    {{$outputNameList}} := svc.{{$method.Name}}(ctx, {{$inputNameObjList}})
+    {{- else }}
+    {{$outputNameList}} := svc.{{$method.Name}}(ctx)
+    {{- end }}
+    {{- if $outputErrField }}
+    return Make{{$method.Name}}Response({{$outputNameList}}), {{$outputErrField.Name}}
+    {{- else }}
+    return Make{{$method.Name}}Response({{$outputNameList}}), nil
+    {{- end}}
+  }
 }
 {{end }}

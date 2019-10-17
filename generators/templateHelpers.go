@@ -28,12 +28,17 @@ func TemplateHelpers() template.FuncMap {
 		"HeaderComment":         HeaderComment,
 		"ShouldGenerateLogging": ShouldGenerateLogging,
 		"MethodSignature":       MethodSignature,
+		"FieldAutoName":         FieldAutoName,
+		"FieldsAutoName":        FieldsAutoName,
 		"FieldDeclaration":      FieldDeclaration,
 		"FieldDeclarations":     FieldDeclarations,
 		"FieldNames":            FieldNames,
 		"FieldsNoContext":       FieldsNoContext,
-		"FieldsError":           FieldsError,
+		"FieldsFirstError":      FieldsFirstError,
+
+		"prefixAll": prefixAll,
 	}
+
 	for k, v := range sprig.GenericFuncMap() {
 		result[k] = v
 	}
@@ -96,21 +101,31 @@ func ShouldGenerateLogging(objs ...interface{}) bool {
 
 func MethodSignature(obj model.Operation) string {
 	return fmt.Sprintf("%s(%s) (%s)", obj.Name,
-		strings.Join(FieldDeclarations(obj.InputArgs), ", "),
-		strings.Join(FieldDeclarations(obj.OutputArgs), ", "))
+		strings.Join(FieldDeclarations(FieldsAutoName(obj.InputArgs, "input")), ", "),
+		strings.Join(FieldDeclarations(FieldsAutoName(obj.OutputArgs, "output")), ", "))
 }
 
-func FieldAutoName(field model.Field, index int) model.Field {
+func FieldAutoName(field model.Field, prefix string, index int) model.Field {
 	if field.Name != "" {
 		return field
 	}
 	if field.TypeName == "error" {
 		field.Name = "err"
 	} else {
-		field.Name = fmt.Sprintf("v%d", index)
+		field.Name = fmt.Sprintf("%s%d", prefix, index)
 	}
 
 	return field
+}
+
+func FieldsAutoName(fields []model.Field, prefix string) []model.Field {
+	var result []model.Field
+
+	for i, field := range fields {
+		result = append(result, FieldAutoName(field, prefix, i))
+	}
+
+	return result
 }
 
 func FieldDeclaration(field model.Field, index int) string {
@@ -122,7 +137,6 @@ func FieldDeclaration(field model.Field, index int) string {
 		fieldModifier = fmt.Sprintf("%s%s", fieldModifier, "*")
 	}
 	fieldType := fmt.Sprintf("%s%s", fieldModifier, field.TypeName)
-	field = FieldAutoName(field, index)
 
 	return fmt.Sprintf("%s %s", field.Name, fieldType)
 }
@@ -138,8 +152,7 @@ func FieldDeclarations(fields []model.Field) []string {
 
 func FieldNames(fields []model.Field) []string {
 	var result []string
-	for i, field := range fields {
-		field = FieldAutoName(field, i)
+	for _, field := range fields {
 		result = append(result, field.Name)
 	}
 
@@ -157,12 +170,21 @@ func FieldsNoContext(fields []model.Field) []model.Field {
 	return result
 }
 
-func FieldsError(fields []model.Field) *model.Field {
-	for i, field := range fields {
+func FieldsFirstError(fields []model.Field) *model.Field {
+	for _, field := range fields {
 		if field.TypeName == "error" {
-			field = FieldAutoName(field, i)
 			return &field
 		}
 	}
 	return nil
+}
+
+func prefixAll(prefix string, v []string) []string {
+	var result []string
+
+	for _, s := range v {
+		result = append(result, fmt.Sprintf("%s%s", prefix, s))
+	}
+
+	return result
 }

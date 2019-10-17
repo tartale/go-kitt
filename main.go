@@ -9,9 +9,9 @@ import (
 	"github.com/MarcGrol/golangAnnotations/model"
 	"github.com/MarcGrol/golangAnnotations/parser"
 
-	"github.com/tartale/go-kitt/external/errorz"
 	"github.com/tartale/go-kitt/generators"
 	"github.com/tartale/go-kitt/generators/gokit"
+	"github.com/tartale/go-kitt/lib/errorz"
 )
 
 func main() {
@@ -50,7 +50,8 @@ func main() {
 func parseAll(inputPath string) generators.ParsedSourceMap {
 
 	const (
-		excludeMatchPattern = "^generated.*.go$"
+		excludeMatchPattern = "^.*" + generators.GeneratedPathNewExtension + "$" + "|" +
+			"^.*" + generators.GeneratedPathExtension + "$"
 		includeMatchPattern = "^.*.go$"
 	)
 

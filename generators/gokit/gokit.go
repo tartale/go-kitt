@@ -1,11 +1,11 @@
 package gokit
 
 import (
-	"github.com/tartale/go-kitt/external/errorz"
 	"github.com/tartale/go-kitt/generators"
 	"github.com/tartale/go-kitt/generators/gokit/authz"
 	"github.com/tartale/go-kitt/generators/gokit/endpoint"
 	"github.com/tartale/go-kitt/generators/gokit/logging"
+	"github.com/tartale/go-kitt/lib/errorz"
 )
 
 func Generate(parsedSources generators.ParsedSourceData) error {
