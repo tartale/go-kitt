@@ -27,7 +27,6 @@ func main() {
 	} else {
 		panic(fmt.Sprintf("usage: %s [<path>]", os.Args[0]))
 	}
-	inputPath = "/Users/tom.artale/Projects/go-beverage/domain"
 
 	parsedSourceMap := parseAll(inputPath)
 	parsedSources := generators.ParsedSourceData{
