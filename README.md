@@ -44,19 +44,19 @@ a "buffer space" within the double-brackets, to enhance readability.
 
 ### TODO (prioritized)
 
--[ ] Implement HTTP transport generation (in-progress)
-   -[ ] Figure out how much the golangAnnotations library can help
-   -[ ] Use method annotations to decode http.Request into endpoint request
-   -[ ] Use method annotations to connect handlers to REST urls
--[ ] Implement more go-kit middleware
-   -[ ] Figure out how much the golangAnnotations, gowrap, and kitgen libraries can help
-   -[ ] Authorization
-   -[ ] Tracing
--[ ] Implement middleware connectors
--[ ] Implement alternate transport(s)
-   -[ ] gRPC
--[ ] Add support for plugins
--[ ] Reduce boilerplate for generators
--[ ] Implement alternate framework(s)
-   -[ ] gRPC Ecosystem
--[ ] Add version stamp to generated code files
+* Implement HTTP transport generation _**(in-progress)**_
+  * Figure out how much the golangAnnotations library can help
+  * Use method annotations to decode http.Request into endpoint request
+  * Use method annotations to connect handlers to REST urls
+* Implement more go-kit middleware
+  * Figure out how much the golangAnnotations, gowrap, and kitgen libraries can help
+  * Authorization
+  * Tracing
+* Implement middleware connectors
+* Implement alternate transport(s)
+  * gRPC
+* Add support for plugins
+* Reduce boilerplate for generators
+* Implement alternate framework(s)
+  * gRPC Ecosystem
+* Add version stamp to generated code files
