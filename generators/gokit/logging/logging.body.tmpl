@@ -8,14 +8,14 @@
 func (mw {{$middlewareName}}) {{MethodSignature $method}} {
 
   defer func(begin time.Time) {
-		_ = mw.logger.Log(
+		_ = mw.Logger.Log(
 			"method", "{{$method.Name}}",
 			"output", fmt.Sprintf("%v", []interface{}{ {{$outputNameList}} }),
 			"took", time.Since(begin),
 		)
 	}(time.Now())
 
-	{{$outputNameList}} = mw.next.{{$method.Name}}({{$inputNameList}})
+	{{$outputNameList}} = mw.Next.{{$method.Name}}({{$inputNameList}})
 
 	return
 }

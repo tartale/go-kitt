@@ -1,4 +1,4 @@
-package logging
+package http
 
 import (
 	"path"
@@ -17,20 +17,23 @@ func Generate(parsedSourceData generators.ParsedSourceData) error {
 	if err != nil {
 		return err
 	}
-	tmpl := template.New("logging.tmpl").Funcs(helpers.TemplateHelpers())
-	tmpl = template.Must(tmpl.ParseGlob(path.Join(thisDir, "logging*tmpl")))
+	tmpl := template.New("http.tmpl").Funcs(helpers.TemplateHelpers())
+	tmpl = template.Must(tmpl.ParseGlob(path.Join(thisDir, "http*tmpl")))
 
 	var errs errorz.Errors
 	var generatedPaths generators.GeneratedPaths
 	for _, key := range parsedSourceData.Keys {
 		parsedSource := parsedSourceData.Map[key]
 		for _, intf := range parsedSource.Interfaces {
+			if !helpers.ShouldGenerateHttp(intf) {
+				continue
+			}
 			data := struct {
 				Interface model.Interface
 			}{
 				Interface: intf,
 			}
-			generatedFilePath := generators.NewGeneratedPathForInterface(intf, "Logging")
+			generatedFilePath := generators.NewGeneratedPathForInterface(intf, "Http")
 			err := generators.GenerateFile(generatedFilePath, tmpl, data)
 			if err != nil {
 				errs = append(errs, err)

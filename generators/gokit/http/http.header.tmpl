@@ -1,0 +1,15 @@
+{{- define "header" }}
+{{- $interface := . }}
+{{- HeaderComment }}
+package {{ $interface.PackageName }}
+
+import (
+  "context"
+  "encoding/json"
+  "net/http"
+  "os"
+
+  "github.com/go-kit/kit/log"
+  httptransport "github.com/go-kit/kit/transport/http"
+)
+{{- end }}

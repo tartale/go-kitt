@@ -1,59 +1,63 @@
-package generators
+package helpers
 
 import (
 	"fmt"
-	"path"
-	"runtime"
 	"strings"
+	"sync"
 	"text/template"
 
+	"github.com/MarcGrol/golangAnnotations/generator/rest/restAnnotation"
 	"github.com/MarcGrol/golangAnnotations/model"
 	"github.com/Masterminds/sprig"
 	"github.com/leekchan/gtf"
-	"github.com/pkg/errors"
 
+	"github.com/tartale/go-kitt/annotations"
 	"github.com/tartale/go-kitt/config"
 )
 
-func ThisDir() (string, error) {
-	if _, filename, _, ok := runtime.Caller(1); ok {
-		return path.Dir(filename), nil
-	}
+var templateFuncs template.FuncMap
+var templateFuncsInit sync.Once
 
-	return "", errors.New("Unable to determine source file of caller")
+func TemplateFuncs() template.FuncMap {
+	templateFuncsInit.Do(func() {
+		templateFuncs = make(template.FuncMap)
+		templateFuncs["HeaderComment"] = HeaderComment
+		templateFuncs["ShouldGenerateLogging"] = ShouldGenerateLogging
+		templateFuncs["ShouldGenerateHttp"] = ShouldGenerateHttp
+		templateFuncs["MethodSignature"] = MethodSignature
+		templateFuncs["FieldAutoName"] = FieldAutoName
+		templateFuncs["FieldsAutoName"] = FieldsAutoName
+		templateFuncs["FieldDeclaration"] = FieldDeclaration
+		templateFuncs["FieldDeclarations"] = FieldDeclarations
+		templateFuncs["FieldNames"] = FieldNames
+		templateFuncs["FieldsNoContext"] = FieldsNoContext
+		templateFuncs["FieldsFirstError"] = FieldsFirstError
+		templateFuncs["prefixAll"] = prefixAll
+
+		for k, v := range sprig.GenericFuncMap() {
+			templateFuncs[k] = v
+		}
+		// hack until sprig@v3.x is available
+		templateFuncs["get"] = func(d map[string]interface{}, key string) interface{} {
+			if val, ok := d[key]; ok {
+				return val
+			}
+			return ""
+		}
+		for k, v := range gtf.GtfTextFuncMap {
+			templateFuncs[k] = v
+		}
+	})
+
+	return templateFuncs
+}
+
+func AddTemplateFunc(name string, fn interface{}) {
+	templateFuncs[name] = fn
 }
 
 func TemplateHelpers() template.FuncMap {
-	result := template.FuncMap{
-		"HeaderComment":         HeaderComment,
-		"ShouldGenerateLogging": ShouldGenerateLogging,
-		"MethodSignature":       MethodSignature,
-		"FieldAutoName":         FieldAutoName,
-		"FieldsAutoName":        FieldsAutoName,
-		"FieldDeclaration":      FieldDeclaration,
-		"FieldDeclarations":     FieldDeclarations,
-		"FieldNames":            FieldNames,
-		"FieldsNoContext":       FieldsNoContext,
-		"FieldsFirstError":      FieldsFirstError,
-
-		"prefixAll": prefixAll,
-	}
-
-	for k, v := range sprig.GenericFuncMap() {
-		result[k] = v
-	}
-	// hack until sprig@v3.x is available
-	result["get"] = func(d map[string]interface{}, key string) interface{} {
-		if val, ok := d[key]; ok {
-			return val
-		}
-		return ""
-	}
-	for k, v := range gtf.GtfTextFuncMap {
-		result[k] = v
-	}
-
-	return result
+	return TemplateFuncs()
 }
 
 func DocLines(obj interface{}) []string {
@@ -90,7 +94,19 @@ func HeaderComment() string {
 func ShouldGenerateLogging(objs ...interface{}) bool {
 	result := config.Config.LogAllMethods
 	for _, obj := range objs {
-		_, ok := AnnotationRegistry.ResolveAnnotationByName(DocLines(obj), Logging)
+		_, ok := annotations.AnnotationRegistry().ResolveAnnotationByName(DocLines(obj), annotations.TypeLogging)
+		if ok {
+			result = true
+			break
+		}
+	}
+	return result
+}
+
+func ShouldGenerateHttp(objs ...interface{}) bool {
+	result := false
+	for _, obj := range objs {
+		_, ok := annotations.AnnotationRegistry().ResolveAnnotationByName(DocLines(obj), restAnnotation.TypeRestService)
 		if ok {
 			result = true
 			break

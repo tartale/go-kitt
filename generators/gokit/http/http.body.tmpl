@@ -1,0 +1,11 @@
+{{- define "body" }}
+{{- $interface := get . "Interface" }}
+{{- $method := get . "Method" }}
+
+func Decode{{ $method.Name }}Request(_ context.Context, r *http.Request) (interface{}, error) {
+  var request {{ $method.Name }}Request
+  // TODO - use annotations to assign http headers, query params, and body to request
+  return request, nil
+}
+
+{{- end }}

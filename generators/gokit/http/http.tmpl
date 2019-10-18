@@ -1,0 +1,11 @@
+{{- $interface := .Interface }}
+{{- $generateHeader := true }}
+{{- range $interface.Methods }}
+{{-     $method := . }}
+{{-     if $generateHeader }}
+{{-       template "header" $interface }}
+{{-       $generateHeader = false }}
+{{-     end }}
+{{-     template "body" (dict "Interface" $interface "Method" $method) }}
+{{- end }}
+{{- template "footer" $interface }}
