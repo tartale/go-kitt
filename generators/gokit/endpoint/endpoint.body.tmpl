@@ -1,24 +1,24 @@
 {{- define "body" }}
 {{- $interface := get . "Interface" }}
 {{- $method := get . "Method" }}
-{{- $namedInputArgs := $method.InputArgs | autoname "input" 0}}
+{{- $namedInputArgs := $method.InputArgs | autoname "input" }}
 {{- $namedInputArgsNoCtx := FieldsNoContext $namedInputArgs }}
 {{- $inputDeclarations := FieldDeclarations $namedInputArgsNoCtx }}
 {{- $inputNameList := FieldNames $namedInputArgs | join ", " }}
 {{- $inputNameObjList := FieldNames $namedInputArgsNoCtx | upperfirst | prefix "obj." | join ", "}}
-{{- $namedOutputArgs := $method.OutputArgs | autoname "output" 0 }}
+{{- $namedOutputArgs := $method.OutputArgs | autoname "output" }}
 {{- $outputDeclarations := FieldDeclarations $namedOutputArgs }}
 {{- $outputNameList := FieldNames $namedOutputArgs | join ", " }}
 {{- $outputErrField := FieldsFirstError $namedOutputArgs }}
 type {{$method.Name}}Request struct {
   {{- range $inputDeclarations }}
-  {{ . | upperfirst }}
+  {{ . | upperfirst | autotag }}
   {{- end }}
 }
 
 type {{$method.Name}}Response struct {
   {{- range $outputDeclarations }}
-  {{ . | upperfirst }}
+  {{ . | upperfirst | autotag }}
   {{- end }}
 }
 

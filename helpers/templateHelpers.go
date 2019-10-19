@@ -11,6 +11,7 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/huandu/xstrings"
 	"github.com/leekchan/gtf"
+	"github.com/pkg/errors"
 
 	"github.com/tartale/go-kitt/annotations"
 	"github.com/tartale/go-kitt/config"
@@ -32,11 +33,12 @@ func TemplateFuncs() template.FuncMap {
 		templateFuncs["FieldsNoContext"] = FieldsNoContext
 		templateFuncs["FieldsFirstError"] = FieldsFirstError
 
-		templateFuncs["autoname"] = autoname
 		templateFuncs["prefix"] = prefix
 		templateFuncs["suffix"] = suffix
 		templateFuncs["upperfirst"] = upperfirst
 		templateFuncs["lowerfirst"] = lowerfirst
+		templateFuncs["autoname"] = autoname
+		templateFuncs["autotag"] = autotag
 
 		for k, v := range sprig.GenericFuncMap() {
 			templateFuncs[k] = v
@@ -137,7 +139,7 @@ func FieldDeclaration(field model.Field) string {
 	}
 	fieldType := fmt.Sprintf("%s%s", fieldModifier, field.TypeName)
 
-	return fmt.Sprintf("%s %s", field.Name, fieldType)
+	return fmt.Sprintf("%s %s %s", field.Name, fieldType, field.Tag)
 }
 
 func FieldDeclarations(fields []model.Field) []string {
@@ -242,47 +244,112 @@ func lowerfirst(value interface{}) interface{} {
 	}
 }
 
-func autoname(prefix string, index int, value interface{}) interface{} {
-
-	switch v := value.(type) {
-	case model.Field:
-		if v.Name != "" {
-			return v
-		}
-		if v.TypeName == "error" {
-			v.Name = "err"
-			return v
-		}
-		if index >= 0 {
-			v.Name = fmt.Sprintf("%s", prefix)
-			return v
-		}
-		v.Name = fmt.Sprintf("%s%d", prefix, index)
-
-		return v
-	case []model.Field:
-		var result []model.Field
-		for i, field := range v {
-			result = append(result, autoname(prefix, i, field).(model.Field))
-		}
-
-		return result
-	default:
-		panic(fmt.Errorf("Unexpected type: %T", v))
-	}
-}
-
-func autotag(value interface{}) interface{} {
-
+func tofield(value interface{}) interface{} {
 	switch v := value.(type) {
 	case model.Field:
 		return v
 	case []model.Field:
 		return v
 	case string:
-		return v
+		declarationParts := strings.Fields(v)
+		var result model.Field
+		if len(declarationParts) >= 1 {
+			result.Name = declarationParts[0]
+		}
+		if len(declarationParts) >= 2 {
+			typeName := declarationParts[1]
+			if strings.Contains(typeName, "*") {
+				result.IsPointer = true
+				typeName = strings.Trim(typeName, "*")
+			}
+			if strings.Contains(typeName, "[]") {
+				result.IsSlice = true
+				typeName = strings.Trim(typeName, "[]")
+			}
+			result.TypeName = typeName
+		}
+		if len(declarationParts) >= 3 {
+			result.Tag = declarationParts[2]
+		}
+		return result
 	case []string:
+		var result []model.Field
+		for _, s := range v {
+			result = append(result, tofield(s).(model.Field))
+		}
+		return result
+	default:
+		panic(fmt.Errorf("Unexpected type: %T", v))
+	}
+}
+
+func autoname(prefix string, args ...interface{}) interface{} {
+
+	index := 0
+
+	for _, arg := range args {
+		switch v := arg.(type) {
+		case int:
+			index = v
+			continue
+		case model.Field:
+			if v.Name != "" {
+				return v
+			}
+			if v.TypeName == "error" {
+				v.Name = "err"
+				return v
+			}
+			if index >= 0 {
+				v.Name = fmt.Sprintf("%s", prefix)
+				return v
+			}
+			v.Name = fmt.Sprintf("%s%d", prefix, index)
+
+			return v
+		case []model.Field:
+			var result []model.Field
+			for i, field := range v {
+				result = append(result, autoname(prefix, i, field).(model.Field))
+			}
+			return result
+		default:
+			panic(fmt.Errorf("Unexpected type: %T", v))
+		}
+	}
+
+	panic(errors.New("usage: {{ model.Field or []model.Field }} | autoname \"prefix\" [index]"))
+}
+
+func autotag(value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case model.Field:
+		if v.Tag != "" {
+			return v
+		}
+		if v.TypeName == "error" {
+			v.Tag = fmt.Sprintf("`json:\"%s,omitempty\"`", xstrings.FirstRuneToLower(v.Name))
+			return v
+		}
+		v.Tag = fmt.Sprintf("`json:\"%s\"`", xstrings.FirstRuneToLower(v.Name))
 		return v
+	case []model.Field:
+		var result []model.Field
+		for _, field := range v {
+			result = append(result, autotag(field).(model.Field))
+		}
+		return result
+	case string:
+		field := tofield(v).(model.Field)
+		field = autotag(field).(model.Field)
+		return FieldDeclaration(field)
+	case []string:
+		var result []string
+		for _, s := range v {
+			result = append(result, autotag(s).(string))
+		}
+		return result
 	default:
 		panic(fmt.Errorf("Unexpected type: %T", v))
 	}

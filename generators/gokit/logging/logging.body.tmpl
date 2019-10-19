@@ -1,9 +1,9 @@
 {{- define "body"}}
 {{- $method := get . "Method" }}
 {{- $middlewareName := get . "MiddlewareName" }}
-{{- $namedInputArgs := $method.InputArgs | autoname "input" 0 }}
+{{- $namedInputArgs := $method.InputArgs | autoname "input" }}
 {{- $inputNameList := FieldNames $namedInputArgs | join ", " }}
-{{- $namedOutputArgs := $method.OutputArgs | autoname "output" 0 }}
+{{- $namedOutputArgs := $method.OutputArgs | autoname "output" }}
 {{- $outputNameList := FieldNames $namedOutputArgs | join ", " }}
 func (mw {{$middlewareName}}) {{MethodSignature $method}} {
 
