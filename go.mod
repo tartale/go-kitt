@@ -12,7 +12,7 @@ require (
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815 // indirect
 	github.com/go-kit/kit v0.9.0
 	github.com/google/uuid v1.1.1 // indirect
-	github.com/huandu/xstrings v1.2.0 // indirect
+	github.com/huandu/xstrings v1.2.0
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/leekchan/gtf v0.0.0-20190214083521-5fba33c5b00b
 	github.com/mitchellh/copystructure v1.0.0 // indirect

@@ -9,6 +9,7 @@ import (
 	"github.com/MarcGrol/golangAnnotations/generator/rest/restAnnotation"
 	"github.com/MarcGrol/golangAnnotations/model"
 	"github.com/Masterminds/sprig"
+	"github.com/huandu/xstrings"
 	"github.com/leekchan/gtf"
 
 	"github.com/tartale/go-kitt/annotations"
@@ -25,14 +26,17 @@ func TemplateFuncs() template.FuncMap {
 		templateFuncs["ShouldGenerateLogging"] = ShouldGenerateLogging
 		templateFuncs["ShouldGenerateHttp"] = ShouldGenerateHttp
 		templateFuncs["MethodSignature"] = MethodSignature
-		templateFuncs["FieldAutoName"] = FieldAutoName
-		templateFuncs["FieldsAutoName"] = FieldsAutoName
 		templateFuncs["FieldDeclaration"] = FieldDeclaration
 		templateFuncs["FieldDeclarations"] = FieldDeclarations
 		templateFuncs["FieldNames"] = FieldNames
 		templateFuncs["FieldsNoContext"] = FieldsNoContext
 		templateFuncs["FieldsFirstError"] = FieldsFirstError
-		templateFuncs["prefixAll"] = prefixAll
+
+		templateFuncs["autoname"] = autoname
+		templateFuncs["prefix"] = prefix
+		templateFuncs["suffix"] = suffix
+		templateFuncs["upperfirst"] = upperfirst
+		templateFuncs["lowerfirst"] = lowerfirst
 
 		for k, v := range sprig.GenericFuncMap() {
 			templateFuncs[k] = v
@@ -116,35 +120,14 @@ func ShouldGenerateHttp(objs ...interface{}) bool {
 }
 
 func MethodSignature(obj model.Operation) string {
+	inputs := autoname("input", 0, obj.InputArgs).([]model.Field)
+	outputs := autoname("output", 0, obj.OutputArgs).([]model.Field)
 	return fmt.Sprintf("%s(%s) (%s)", obj.Name,
-		strings.Join(FieldDeclarations(FieldsAutoName(obj.InputArgs, "input")), ", "),
-		strings.Join(FieldDeclarations(FieldsAutoName(obj.OutputArgs, "output")), ", "))
+		strings.Join(FieldDeclarations(inputs), ", "),
+		strings.Join(FieldDeclarations(outputs), ", "))
 }
 
-func FieldAutoName(field model.Field, prefix string, index int) model.Field {
-	if field.Name != "" {
-		return field
-	}
-	if field.TypeName == "error" {
-		field.Name = "err"
-	} else {
-		field.Name = fmt.Sprintf("%s%d", prefix, index)
-	}
-
-	return field
-}
-
-func FieldsAutoName(fields []model.Field, prefix string) []model.Field {
-	var result []model.Field
-
-	for i, field := range fields {
-		result = append(result, FieldAutoName(field, prefix, i))
-	}
-
-	return result
-}
-
-func FieldDeclaration(field model.Field, index int) string {
+func FieldDeclaration(field model.Field) string {
 	var fieldModifier string
 	if field.IsSlice {
 		fieldModifier = fmt.Sprintf("%s%s", fieldModifier, "[]")
@@ -159,8 +142,8 @@ func FieldDeclaration(field model.Field, index int) string {
 
 func FieldDeclarations(fields []model.Field) []string {
 	var result []string
-	for i, field := range fields {
-		result = append(result, FieldDeclaration(field, i))
+	for _, field := range fields {
+		result = append(result, FieldDeclaration(field))
 	}
 
 	return result
@@ -195,12 +178,112 @@ func FieldsFirstError(fields []model.Field) *model.Field {
 	return nil
 }
 
-func prefixAll(prefix string, v []string) []string {
-	var result []string
+func prefix(prefix string, value interface{}) interface{} {
 
-	for _, s := range v {
-		result = append(result, fmt.Sprintf("%s%s", prefix, s))
+	switch v := value.(type) {
+	case string:
+		return fmt.Sprintf("%s%s", prefix, v)
+	case []string:
+		var result []string
+		for _, s := range v {
+			result = append(result, fmt.Sprintf("%s%s", prefix, s))
+		}
+		return result
+	default:
+		panic(fmt.Errorf("Unexpected type: %T", v))
 	}
+}
 
-	return result
+func suffix(suffix string, value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case string:
+		return fmt.Sprintf("%s%s", v, suffix)
+	case []string:
+		var result []string
+		for _, s := range v {
+			result = append(result, fmt.Sprintf("%s%s", s, suffix))
+		}
+		return result
+	default:
+		panic(fmt.Errorf("Unexpected type: %T", v))
+	}
+}
+
+func upperfirst(value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case string:
+		return xstrings.FirstRuneToUpper(v)
+	case []string:
+		var result []string
+		for _, s := range v {
+			result = append(result, upperfirst(s).(string))
+		}
+		return result
+	default:
+		panic(fmt.Errorf("Unexpected type: %T", v))
+	}
+}
+
+func lowerfirst(value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case string:
+		return xstrings.FirstRuneToLower(v)
+	case []string:
+		var result []string
+		for _, s := range v {
+			result = append(result, lowerfirst(s).(string))
+		}
+		return result
+	default:
+		panic(fmt.Errorf("Unexpected type: %T", v))
+	}
+}
+
+func autoname(prefix string, index int, value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case model.Field:
+		if v.Name != "" {
+			return v
+		}
+		if v.TypeName == "error" {
+			v.Name = "err"
+			return v
+		}
+		if index >= 0 {
+			v.Name = fmt.Sprintf("%s", prefix)
+			return v
+		}
+		v.Name = fmt.Sprintf("%s%d", prefix, index)
+
+		return v
+	case []model.Field:
+		var result []model.Field
+		for i, field := range v {
+			result = append(result, autoname(prefix, i, field).(model.Field))
+		}
+
+		return result
+	default:
+		panic(fmt.Errorf("Unexpected type: %T", v))
+	}
+}
+
+func autotag(value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case model.Field:
+		return v
+	case []model.Field:
+		return v
+	case string:
+		return v
+	case []string:
+		return v
+	default:
+		panic(fmt.Errorf("Unexpected type: %T", v))
+	}
 }

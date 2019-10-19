@@ -1,31 +1,31 @@
 {{- define "body" }}
 {{- $interface := get . "Interface" }}
 {{- $method := get . "Method" }}
-{{- $namedInputArgs := FieldsAutoName $method.InputArgs "input" }}
+{{- $namedInputArgs := $method.InputArgs | autoname "input" 0}}
 {{- $namedInputArgsNoCtx := FieldsNoContext $namedInputArgs }}
 {{- $inputDeclarations := FieldDeclarations $namedInputArgsNoCtx }}
 {{- $inputNameList := FieldNames $namedInputArgs | join ", " }}
-{{- $inputNameObjList := FieldNames $namedInputArgsNoCtx | prefixAll "obj." | join ", "}}
-{{- $namedOutputArgs := FieldsAutoName $method.OutputArgs "output" }}
+{{- $inputNameObjList := FieldNames $namedInputArgsNoCtx | upperfirst | prefix "obj." | join ", "}}
+{{- $namedOutputArgs := $method.OutputArgs | autoname "output" 0 }}
 {{- $outputDeclarations := FieldDeclarations $namedOutputArgs }}
 {{- $outputNameList := FieldNames $namedOutputArgs | join ", " }}
 {{- $outputErrField := FieldsFirstError $namedOutputArgs }}
 type {{$method.Name}}Request struct {
   {{- range $inputDeclarations }}
-  {{ . }}
+  {{ . | upperfirst }}
   {{- end }}
 }
 
 type {{$method.Name}}Response struct {
   {{- range $outputDeclarations }}
-  {{ . }}
+  {{ . | upperfirst }}
   {{- end }}
 }
 
 func Make{{$method.Name}}Response({{$outputDeclarations | join ", " }}) {{$method.Name}}Response {
   var result {{$method.Name}}Response
   {{- range $namedOutputArgs }}
-  result.{{.Name}} = {{.Name}}
+  result.{{.Name | upperfirst }} = {{.Name}}
   {{- end}}
 
   return result
