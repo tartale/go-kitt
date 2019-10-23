@@ -8,7 +8,7 @@ import (
 
 	"github.com/tartale/go-kitt/generators"
 	"github.com/tartale/go-kitt/helpers"
-	"github.com/tartale/go-kitt/lib/errorz"
+	"github.com/tartale/go/pkg/errors"
 )
 
 func Generate(parsedSourceData generators.ParsedSourceData) error {
@@ -20,7 +20,7 @@ func Generate(parsedSourceData generators.ParsedSourceData) error {
 	tmpl := template.New("endpoint.tmpl").Funcs(helpers.TemplateHelpers())
 	tmpl = template.Must(tmpl.ParseGlob(path.Join(thisDir, "endpoint*tmpl")))
 
-	var errs errorz.Errors
+	var errs errors.Errors
 	var generatedPaths generators.GeneratedPaths
 	for _, key := range parsedSourceData.Keys {
 		parsedSource := parsedSourceData.Map[key]

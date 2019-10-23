@@ -2,27 +2,27 @@
 {{- $interface := get . "Interface" }}
 {{- $method := get . "Method" }}
 {{- $namedInputArgs := $method.InputArgs | autoname "input" }}
-{{- $namedInputArgsNoCtx := FieldsNoContext $namedInputArgs }}
-{{- $inputDeclarations := FieldDeclarations $namedInputArgsNoCtx }}
-{{- $inputNameList := FieldNames $namedInputArgs | join ", " }}
-{{- $inputNameObjList := FieldNames $namedInputArgsNoCtx | upperfirst | prefix "obj." | join ", "}}
+{{- $namedInputArgsNoCtx := $namedInputArgs | filtercontexts }}
+{{- $inputDeclarations := $namedInputArgsNoCtx | toDeclarations }}
+{{- $inputNameList := $namedInputArgs | names | join ", " }}
+{{- $inputNameObjList := $namedInputArgsNoCtx | names | upperfirst | prefix "obj." | join ", "}}
 {{- $namedOutputArgs := $method.OutputArgs | autoname "output" }}
-{{- $outputDeclarations := FieldDeclarations $namedOutputArgs }}
-{{- $outputNameList := FieldNames $namedOutputArgs | join ", " }}
-{{- $outputErrField := FieldsFirstError $namedOutputArgs }}
+{{- $outputDeclarations := $namedOutputArgs | toDeclarations }}
+{{- $outputNameList := $namedOutputArgs | names | join ", " }}
+{{- $outputErrField := $namedOutputArgs | firsterror }}
 type {{$method.Name}}Request struct {
   {{- range $inputDeclarations }}
-  {{ . | upperfirst | autotag }}
+  {{ . | autotag | toString | upperfirst }}
   {{- end }}
 }
 
 type {{$method.Name}}Response struct {
   {{- range $outputDeclarations }}
-  {{ . | upperfirst | autotag }}
+  {{ . | autotag | toString | upperfirst }}
   {{- end }}
 }
 
-func Make{{$method.Name}}Response({{$outputDeclarations | join ", " }}) {{$method.Name}}Response {
+func Make{{$method.Name}}Response({{ $outputDeclarations | toStrings | join ", " }}) {{$method.Name}}Response {
   var result {{$method.Name}}Response
   {{- range $namedOutputArgs }}
   result.{{.Name | upperfirst }} = {{.Name}}

@@ -2,16 +2,24 @@
 {{- $method := get . "Method" }}
 {{- $middlewareName := get . "MiddlewareName" }}
 {{- $namedInputArgs := $method.InputArgs | autoname "input" }}
-{{- $inputNameList := FieldNames $namedInputArgs | join ", " }}
+{{- $inputNameList := $namedInputArgs | names | join ", " }}
 {{- $namedOutputArgs := $method.OutputArgs | autoname "output" }}
-{{- $outputNameList := FieldNames $namedOutputArgs | join ", " }}
+{{- $outputNameList := $namedOutputArgs | names | join ", " }}
+{{- $outputStringAssignments := $namedOutputArgs | filtererrors | toStringAssignments }}
+{{- $firstError := $namedOutputArgs | firsterror }}
 func (mw {{$middlewareName}}) {{MethodSignature $method}} {
 
   defer func(begin time.Time) {
+    {{- range $outputStringAssignments }}
+    {{ . }}
+    {{- end }}
 		_ = mw.Logger.Log(
 			"method", "{{$method.Name}}",
-			"output", fmt.Sprintf("%v", []interface{}{ {{$outputNameList}} }),
+			"output", []string{ {{ $outputStringAssignments | names | join ", "}} },
 			"took", time.Since(begin),
+      {{- if $firstError }}
+      "err", {{ $firstError.Name }},
+      {{- end }}
 		)
 	}(time.Now())
 

@@ -11,8 +11,9 @@ import (
 	"github.com/MarcGrol/golangAnnotations/model"
 	"github.com/pkg/errors"
 
+	errorz "github.com/tartale/go/pkg/errors"
+
 	"github.com/tartale/go-kitt/config"
-	"github.com/tartale/go-kitt/lib/errorz"
 )
 
 const GeneratedPathNewExtension = "gen.new.go"

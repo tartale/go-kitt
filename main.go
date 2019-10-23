@@ -9,9 +9,10 @@ import (
 	"github.com/MarcGrol/golangAnnotations/model"
 	"github.com/MarcGrol/golangAnnotations/parser"
 
+	"github.com/tartale/go/pkg/errors"
+
 	"github.com/tartale/go-kitt/generators"
 	"github.com/tartale/go-kitt/generators/gokit"
-	"github.com/tartale/go-kitt/lib/errorz"
 )
 
 func main() {
@@ -34,7 +35,7 @@ func main() {
 		Keys: parsedSourceMap.Keys(),
 	}
 
-	var errs errorz.Errors
+	var errs errors.Errors
 
 	err := gokit.Generate(parsedSources)
 	if err != nil {

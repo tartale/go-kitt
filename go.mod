@@ -18,7 +18,7 @@ require (
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/nyarly/inlinefiles v0.0.0-20190505234105-847932cdc7e5
 	github.com/pkg/errors v0.8.1
-	github.com/stretchr/testify v1.4.0 // indirect
+	github.com/tartale/go v0.0.0-20191023191420-3ce1a197d0c6
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
 	golang.org/x/tools v0.0.0-20191015150414-f936694f27bf // indirect
 )

@@ -1,8 +1,5 @@
 {{- define "footer" }}
-
-{{/*func EncodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {*/}}
-{{/*  return json.NewEncoder(w).Encode(response)*/}}
-{{/*}*/}}
+{{- $interface := get . "Interface" }}
 
 {{/*func StartHTTPServer() error {*/}}
 {{/*  svc, err := domain.NewBeverageService()*/}}
@@ -21,5 +18,16 @@
 
 {{/*  return nil*/}}
 {{/*}*/}}
+
+func New{{ $interface.Name }}Service() ({{ $interface.Name }}, error) {
+  svc, err := New{{$interface.Name}}()
+  if err != nil {
+    return nil, err
+  }
+}
+
+func New{{ $interface.Name }}Router() (*Router, error) {
+
+}
 
 {{- end }}

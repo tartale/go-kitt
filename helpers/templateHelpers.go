@@ -11,10 +11,10 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/huandu/xstrings"
 	"github.com/leekchan/gtf"
-	"github.com/pkg/errors"
 
 	"github.com/tartale/go-kitt/annotations"
 	"github.com/tartale/go-kitt/config"
+	"github.com/tartale/go-kitt/helpers/modelx"
 )
 
 var templateFuncs template.FuncMap
@@ -27,12 +27,13 @@ func TemplateFuncs() template.FuncMap {
 		templateFuncs["ShouldGenerateLogging"] = ShouldGenerateLogging
 		templateFuncs["ShouldGenerateHttp"] = ShouldGenerateHttp
 		templateFuncs["MethodSignature"] = MethodSignature
-		templateFuncs["FieldDeclaration"] = FieldDeclaration
-		templateFuncs["FieldDeclarations"] = FieldDeclarations
-		templateFuncs["FieldNames"] = FieldNames
-		templateFuncs["FieldsNoContext"] = FieldsNoContext
-		templateFuncs["FieldsFirstError"] = FieldsFirstError
 
+		templateFuncs["toDeclarations"] = toDeclarations
+		templateFuncs["toStringAssignments"] = toStringAssignments
+		templateFuncs["names"] = names
+		templateFuncs["filtercontexts"] = filtercontexts
+		templateFuncs["filtererrors"] = filtererrors
+		templateFuncs["firsterror"] = firsterror
 		templateFuncs["prefix"] = prefix
 		templateFuncs["suffix"] = suffix
 		templateFuncs["upperfirst"] = upperfirst
@@ -122,59 +123,129 @@ func ShouldGenerateHttp(objs ...interface{}) bool {
 }
 
 func MethodSignature(obj model.Operation) string {
-	inputs := autoname("input", 0, obj.InputArgs).([]model.Field)
-	outputs := autoname("output", 0, obj.OutputArgs).([]model.Field)
+	toStrings := TemplateFuncs()["toStrings"].(func(interface{}) []string)
+	inputs := autoname("input", obj.InputArgs).([]model.Field)
+	inputDeclarations := toStrings(toDeclarations(inputs))
+	outputs := autoname("output", obj.OutputArgs).([]model.Field)
+	outputDeclarations := toStrings(toDeclarations(outputs))
+
 	return fmt.Sprintf("%s(%s) (%s)", obj.Name,
-		strings.Join(FieldDeclarations(inputs), ", "),
-		strings.Join(FieldDeclarations(outputs), ", "))
+		strings.Join(inputDeclarations, ", "),
+		strings.Join(outputDeclarations, ", "))
 }
 
-func FieldDeclaration(field model.Field) string {
-	var fieldModifier string
-	if field.IsSlice {
-		fieldModifier = fmt.Sprintf("%s%s", fieldModifier, "[]")
-	}
-	if field.IsPointer {
-		fieldModifier = fmt.Sprintf("%s%s", fieldModifier, "*")
-	}
-	fieldType := fmt.Sprintf("%s%s", fieldModifier, field.TypeName)
+func toDeclarations(value interface{}) interface{} {
 
-	return fmt.Sprintf("%s %s %s", field.Name, fieldType, field.Tag)
-}
-
-func FieldDeclarations(fields []model.Field) []string {
-	var result []string
-	for _, field := range fields {
-		result = append(result, FieldDeclaration(field))
-	}
-
-	return result
-}
-
-func FieldNames(fields []model.Field) []string {
-	var result []string
-	for _, field := range fields {
-		result = append(result, field.Name)
-	}
-
-	return result
-}
-
-func FieldsNoContext(fields []model.Field) []model.Field {
-	var result []model.Field
-	for _, field := range fields {
-		if field.TypeName == "context.Context" {
-			continue
+	switch v := value.(type) {
+	case model.Field:
+		return modelx.Declaration{Field: v}
+	case []model.Field:
+		var result modelx.Declarations
+		for _, field := range v {
+			result = append(result, modelx.Declaration{Field: field})
 		}
-		result = append(result, field)
+		return result
+	default:
+		return value
 	}
-	return result
 }
 
-func FieldsFirstError(fields []model.Field) *model.Field {
-	for _, field := range fields {
-		if field.TypeName == "error" {
-			return &field
+func toStringAssignments(value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case model.Field:
+		var dereferencer string
+		if v.IsPointer {
+			dereferencer = "*"
+		}
+		result := modelx.Assignment{Field: v, RHS: `fmt.Sprintf("%+v", ` + dereferencer + v.Name + ")"}
+		result.Field.Name = result.Field.Name + "String"
+		return result
+	case []model.Field:
+		var result modelx.Assignments
+		for _, field := range v {
+			result = append(result, toStringAssignments(field).(modelx.Assignment))
+		}
+		return result
+	}
+
+	return value
+}
+
+func names(value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case modelx.Declaration:
+		return v.Field.Name
+	case modelx.Declarations:
+		var result []string
+		for _, decl := range v {
+			result = append(result, decl.Field.Name)
+		}
+		return result
+	case modelx.Assignment:
+		return v.Field.Name
+	case modelx.Assignments:
+		var result []string
+		for _, assignment := range v {
+			result = append(result, assignment.Field.Name)
+		}
+		return result
+	case model.Field:
+		return v.Name
+	case []model.Field:
+		var result []string
+		for _, field := range v {
+			result = append(result, field.Name)
+		}
+		return result
+	}
+
+	return value
+}
+
+func filtercontexts(value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case []model.Field:
+		var result []model.Field
+		for _, field := range v {
+			if field.TypeName == "context.Context" {
+				continue
+			}
+			result = append(result, field)
+		}
+		return result
+	}
+
+	return value
+}
+
+func filtererrors(value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case []model.Field:
+		var result []model.Field
+		for _, field := range v {
+			if field.TypeName == "error" {
+				continue
+			}
+			result = append(result, field)
+		}
+		return result
+	}
+
+	return value
+}
+
+func firsterror(value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case []model.Field:
+		for _, field := range v {
+			if field.TypeName == "error" {
+				return field
+			}
 		}
 	}
 	return nil
@@ -192,7 +263,7 @@ func prefix(prefix string, value interface{}) interface{} {
 		}
 		return result
 	default:
-		panic(fmt.Errorf("Unexpected type: %T", v))
+		return value
 	}
 }
 
@@ -208,7 +279,7 @@ func suffix(suffix string, value interface{}) interface{} {
 		}
 		return result
 	default:
-		panic(fmt.Errorf("Unexpected type: %T", v))
+		return value
 	}
 }
 
@@ -224,7 +295,7 @@ func upperfirst(value interface{}) interface{} {
 		}
 		return result
 	default:
-		panic(fmt.Errorf("Unexpected type: %T", v))
+		return value
 	}
 }
 
@@ -240,7 +311,7 @@ func lowerfirst(value interface{}) interface{} {
 		}
 		return result
 	default:
-		panic(fmt.Errorf("Unexpected type: %T", v))
+		return value
 	}
 }
 
@@ -279,14 +350,13 @@ func tofield(value interface{}) interface{} {
 		}
 		return result
 	default:
-		panic(fmt.Errorf("Unexpected type: %T", v))
+		return value
 	}
 }
 
 func autoname(prefix string, args ...interface{}) interface{} {
 
 	index := 0
-
 	for _, arg := range args {
 		switch v := arg.(type) {
 		case int:
@@ -314,11 +384,11 @@ func autoname(prefix string, args ...interface{}) interface{} {
 			}
 			return result
 		default:
-			panic(fmt.Errorf("Unexpected type: %T", v))
+			return args[len(args)-1]
 		}
 	}
 
-	panic(errors.New("usage: {{ model.Field or []model.Field }} | autoname \"prefix\" [index]"))
+	return args[len(args)-1]
 }
 
 func autotag(value interface{}) interface{} {
@@ -340,10 +410,23 @@ func autotag(value interface{}) interface{} {
 			result = append(result, autotag(field).(model.Field))
 		}
 		return result
+	case modelx.Declaration:
+		var result modelx.Declaration
+		result.Field = autotag(v.Field).(model.Field)
+		return result
+	case modelx.Declarations:
+		var result modelx.Declarations
+		for _, decl := range v {
+			decl.Field = autotag(decl.Field).(model.Field)
+			result = append(result, decl)
+		}
+		return result
 	case string:
+		var result string
 		field := tofield(v).(model.Field)
 		field = autotag(field).(model.Field)
-		return FieldDeclaration(field)
+		result = toDeclarations(field).(modelx.Declaration).String()
+		return result
 	case []string:
 		var result []string
 		for _, s := range v {
@@ -351,6 +434,6 @@ func autotag(value interface{}) interface{} {
 		}
 		return result
 	default:
-		panic(fmt.Errorf("Unexpected type: %T", v))
+		return value
 	}
 }

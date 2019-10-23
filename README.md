@@ -41,6 +41,24 @@ for "one-shot" and "repeated" sections, for readability.
 in the generated code
 * Use indentations in "instruction" lines, and include
 a "buffer space" within the double-brackets, to enhance readability.
+##### Template functions:
+* Prefer "pipe"-style template functions.
+* Before adding a new function, ensure it hasn't already been implemented in the included libraries:
+  * [github.com/Masterminds/sprig](https://github.com/Masterminds/sprig)
+  * [github.com/leekchan/gtf](https://github.com/leekchan/gtf)
+* "Pipe"-style functions should be registered starting with a lower-case letter;
+regular functions should be registered starting with an upper-case letter.
+* Functions should try to return a reasonable default value when unexpected input is
+given (for a pipe function, a reasonable default could be the unchanged input). This
+is in contrast to the common practice of returning an error, which
+would cause readability issues in a template.  Using `panic` could
+also be useful to early-terminate the code generation
+* While not a good general practice, use of `interface{}` parameter/return types and `variadic`
+arguments in a template function can help increase the readability of
+the template; one reason being that templates don't require casting.
+The trade-off is with type-safety and clarity in the template function itself,
+however, those issues are more easily surfaced in templates and code
+generators than service-like programs.
 
 ### TODO (prioritized)
 

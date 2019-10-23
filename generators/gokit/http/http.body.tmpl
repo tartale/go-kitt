@@ -1,11 +1,31 @@
 {{- define "body" }}
 {{- $interface := get . "Interface" }}
 {{- $method := get . "Method" }}
+{{- $namedInputArgs := $method.InputArgs | autoname "input" }}
+{{- $namedInputArgsNoCtx := $namedInputArgs | filtercontexts }}
 
 func Decode{{ $method.Name }}Request(_ context.Context, r *http.Request) (interface{}, error) {
   var request {{ $method.Name }}Request
-  // TODO - use annotations to assign http headers, query params, and body to request
+  {{- if $namedInputArgsNoCtx }}
+  vars := mux.Vars(r)
+  {{- range $namedInputArgsNoCtx }}
+  if val, ok := vars["{{.Name}}"]; ok {
+      err := strconv.ParsePrimitive(val, &request.{{.Name | upperfirst}})
+      if err != nil {
+          return nil, err
+      }
+  }
+  {{- end }}
+  if err := json.NewDecoder(r.Body).Decode(&request); err != nil && err != io.EOF {
+  	return nil, err
+  }
+  {{- end }}
   return request, nil
+}
+
+func Encode{{ $method.Name }}Response(_ context.Context, w http.ResponseWriter, response interface{}) error {
+  // TODO - use annotations to assign http headers, query params, and body to response
+  return json.NewEncoder(w).Encode(response)
 }
 
 {{- end }}
