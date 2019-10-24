@@ -1,33 +1,25 @@
 {{- define "footer" }}
-{{- $interface := get . "Interface" }}
+{{- $interface := . }}
 
-{{/*func StartHTTPServer() error {*/}}
-{{/*  svc, err := domain.NewBeverageService()*/}}
-{{/*  if err != nil {*/}}
-{{/*    return err*/}}
-{{/*  }*/}}
-{{/*  svc = loggingMiddleware{log.NewJSONLogger(os.Stdout), svc}*/}}
-{{/*  findAllBeersHandler := httptransport.NewServer(*/}}
-{{/*    MakeFindAllBeersEndpoint(svc),*/}}
-{{/*    DecodeFindAllBeersRequest,*/}}
-{{/*    EncodeResponse,*/}}
-{{/*  )*/}}
+func New{{ $interface.Name }}HttpHandler(svc {{ $interface.Name }}) (http.Handler, error) {
 
-{{/*  http.Handle("/beers", findAllBeersHandler)*/}}
-{{/*  http.ListenAndServe(":8080", nil)*/}}
+	router := mux.NewRouter()
 
-{{/*  return nil*/}}
-{{/*}*/}}
+	{{- range $interface.Methods }}
+	{{- $method := . }}
+  {{- $restOperation := $method | annotation "RestOperation" }}
 
-func New{{ $interface.Name }}Service() ({{ $interface.Name }}, error) {
-  svc, err := New{{$interface.Name}}()
-  if err != nil {
-    return nil, err
-  }
-}
+	{{ $method.Name }}Handler := httptransport.NewServer(
+		Make{{ $method.Name | upperfirst }}Endpoint(svc),
+		Decode{{ $method.Name | upperfirst }}Request,
+		Encode{{ $method.Name | upperfirst }}Response,
+	)
+	router.Handle("{{ $restOperation | attribute "path" }}", {{ $method.Name }}Handler).
+		Methods("{{ $restOperation | attribute "method" }}")
 
-func New{{ $interface.Name }}Router() (*Router, error) {
+	{{- end }}
 
+	return router, nil
 }
 
 {{- end }}

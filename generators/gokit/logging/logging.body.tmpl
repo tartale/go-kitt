@@ -7,7 +7,7 @@
 {{- $outputNameList := $namedOutputArgs | names | join ", " }}
 {{- $outputStringAssignments := $namedOutputArgs | filtererrors | toStringAssignments }}
 {{- $firstError := $namedOutputArgs | firsterror }}
-func (mw {{$middlewareName}}) {{MethodSignature $method}} {
+func (mw {{$middlewareName}}) {{ $method | signature }} {
 
   defer func(begin time.Time) {
     {{- range $outputStringAssignments }}

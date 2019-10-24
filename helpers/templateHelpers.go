@@ -6,6 +6,7 @@ import (
 	"sync"
 	"text/template"
 
+	annotationType "github.com/MarcGrol/golangAnnotations/generator/annotation"
 	"github.com/MarcGrol/golangAnnotations/generator/rest/restAnnotation"
 	"github.com/MarcGrol/golangAnnotations/model"
 	"github.com/Masterminds/sprig"
@@ -17,17 +18,18 @@ import (
 	"github.com/tartale/go-kitt/helpers/modelx"
 )
 
-var templateFuncs template.FuncMap
+var templateFuncs = make(template.FuncMap)
 var templateFuncsInit sync.Once
 
 func TemplateFuncs() template.FuncMap {
 	templateFuncsInit.Do(func() {
-		templateFuncs = make(template.FuncMap)
 		templateFuncs["HeaderComment"] = HeaderComment
 		templateFuncs["ShouldGenerateLogging"] = ShouldGenerateLogging
 		templateFuncs["ShouldGenerateHttp"] = ShouldGenerateHttp
-		templateFuncs["MethodSignature"] = MethodSignature
 
+		templateFuncs["annotation"] = annotation
+		templateFuncs["attribute"] = attribute
+		templateFuncs["signature"] = signature
 		templateFuncs["toDeclarations"] = toDeclarations
 		templateFuncs["toStringAssignments"] = toStringAssignments
 		templateFuncs["names"] = names
@@ -122,7 +124,29 @@ func ShouldGenerateHttp(objs ...interface{}) bool {
 	return result
 }
 
-func MethodSignature(obj model.Operation) string {
+func annotation(name string, value interface{}) interface{} {
+
+	if annot, ok := annotations.AnnotationRegistry().ResolveAnnotationByName(DocLines(value), name); ok {
+		return annot
+	}
+
+	return nil
+}
+
+func attribute(name string, value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case annotationType.Annotation:
+		if a, ok := v.Attributes[name]; ok {
+			return a
+		}
+		return nil
+	}
+
+	return value
+}
+
+func signature(obj model.Operation) string {
 	toStrings := TemplateFuncs()["toStrings"].(func(interface{}) []string)
 	inputs := autoname("input", obj.InputArgs).([]model.Field)
 	inputDeclarations := toStrings(toDeclarations(inputs))

@@ -4,10 +4,14 @@
 package {{ $interface.PackageName }}
 
 import (
-  "context"
-  "encoding/json"
-  "net/http"
+	"context"
+	"encoding/json"
+	"io"
+	"net/http"
 
-  "github.com/gorilla/mux"
+	httptransport "github.com/go-kit/kit/transport/http"
+
+	"github.com/gorilla/mux"
+	"github.com/tartale/go/pkg/strconv"
 )
 {{- end }}
