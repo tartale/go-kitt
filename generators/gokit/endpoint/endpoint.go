@@ -6,18 +6,18 @@ import (
 
 	"github.com/MarcGrol/golangAnnotations/model"
 
-	"github.com/tartale/go-kitt/generators"
-	"github.com/tartale/go-kitt/helpers"
 	"github.com/tartale/go/pkg/errors"
+
+	"github.com/tartale/go-kitt/generators"
 )
 
 func Generate(parsedSourceData generators.ParsedSourceData) error {
 
-	thisDir, err := helpers.ThisDir()
+	thisDir, err := generators.ThisDir()
 	if err != nil {
 		return err
 	}
-	tmpl := template.New("endpoint.tmpl").Funcs(helpers.TemplateHelpers())
+	tmpl := template.New("endpoint.tmpl").Funcs(generators.TemplateHelpers())
 	tmpl = template.Must(tmpl.ParseGlob(path.Join(thisDir, "endpoint*tmpl")))
 
 	var errs errors.Errors

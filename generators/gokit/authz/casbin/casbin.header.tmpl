@@ -1,0 +1,18 @@
+{{- define "header"}}
+{{- $interface := get . "Interface" }}
+{{- $middlewareName := get . "MiddlewareName" }}
+{{- HeaderComment }}
+package {{ $interface.PackageName }}
+
+import (
+  "context"
+  "errors"
+
+  "github.com/casbin/casbin"
+)
+
+type {{$middlewareName}} struct {
+  Logger log.Logger
+  Next   {{$interface.Name}}
+}
+{{ end }}

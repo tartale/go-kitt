@@ -8,16 +8,15 @@ import (
 	"github.com/tartale/go/pkg/errors"
 
 	"github.com/tartale/go-kitt/generators"
-	"github.com/tartale/go-kitt/helpers"
 )
 
 func Generate(parsedSourceData generators.ParsedSourceData) error {
 
-	thisDir, err := helpers.ThisDir()
+	thisDir, err := generators.ThisDir()
 	if err != nil {
 		return err
 	}
-	tmpl := template.New("logging.tmpl").Funcs(helpers.TemplateHelpers())
+	tmpl := template.New("logging.tmpl").Funcs(generators.TemplateHelpers())
 	tmpl = template.Must(tmpl.ParseGlob(path.Join(thisDir, "logging*tmpl")))
 
 	var errs errors.Errors

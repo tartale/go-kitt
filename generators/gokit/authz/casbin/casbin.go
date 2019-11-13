@@ -1,4 +1,4 @@
-package http
+package authz
 
 import (
 	"path"
@@ -16,23 +16,20 @@ func Generate(parsedSourceData generators.ParsedSourceData) error {
 	if err != nil {
 		return err
 	}
-	tmpl := template.New("http.tmpl").Funcs(generators.TemplateHelpers())
-	tmpl = template.Must(tmpl.ParseGlob(path.Join(thisDir, "http*tmpl")))
+	tmpl := template.New("casbin.tmpl").Funcs(generators.TemplateHelpers())
+	tmpl = template.Must(tmpl.ParseGlob(path.Join(thisDir, "casbin*tmpl")))
 
 	var errs errors.Errors
 	var generatedPaths generators.GeneratedPaths
 	for _, key := range parsedSourceData.Keys {
 		parsedSource := parsedSourceData.Map[key]
 		for _, intf := range parsedSource.Interfaces {
-			if !generators.ShouldGenerateHttp(intf) {
-				continue
-			}
 			data := struct {
 				Interface model.Interface
 			}{
 				Interface: intf,
 			}
-			generatedFilePath := generators.NewGeneratedPathForInterface(intf, "Http")
+			generatedFilePath := generators.NewGeneratedPathForInterface(intf, "AuthzCasbin")
 			err := generators.GenerateFile(generatedFilePath, tmpl, data)
 			if err != nil {
 				errs = append(errs, err)
@@ -43,10 +40,7 @@ func Generate(parsedSourceData generators.ParsedSourceData) error {
 	}
 
 	if len(errs) > 0 {
-		err := generatedPaths.RemoveAll()
-		if err != nil {
-			errs = append(errs, err)
-		}
+		generatedPaths.RemoveAll()
 		return errs
 	}
 

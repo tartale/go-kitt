@@ -1,4 +1,4 @@
-package helpers
+package generators
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ import (
 
 	"github.com/tartale/go-kitt/annotations"
 	"github.com/tartale/go-kitt/config"
-	"github.com/tartale/go-kitt/helpers/modelx"
+	"github.com/tartale/go-kitt/generators/modelx"
 )
 
 var templateFuncs = make(template.FuncMap)
@@ -26,6 +26,7 @@ func TemplateFuncs() template.FuncMap {
 		templateFuncs["HeaderComment"] = HeaderComment
 		templateFuncs["ShouldGenerateLogging"] = ShouldGenerateLogging
 		templateFuncs["ShouldGenerateHttp"] = ShouldGenerateHttp
+		templateFuncs["ShouldGenerateAuthz"] = ShouldGenerateAuthz
 
 		templateFuncs["annotation"] = annotation
 		templateFuncs["attribute"] = attribute
@@ -116,6 +117,18 @@ func ShouldGenerateHttp(objs ...interface{}) bool {
 	result := false
 	for _, obj := range objs {
 		_, ok := annotations.AnnotationRegistry().ResolveAnnotationByName(DocLines(obj), restAnnotation.TypeRestService)
+		if ok {
+			result = true
+			break
+		}
+	}
+	return result
+}
+
+func ShouldGenerateAuthz(objs ...interface{}) bool {
+	result := false
+	for _, obj := range objs {
+		_, ok := annotations.AnnotationRegistry().ResolveAnnotationByName(DocLines(obj), annotations.TypeAuthorization)
 		if ok {
 			result = true
 			break

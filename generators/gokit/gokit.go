@@ -4,7 +4,6 @@ import (
 	"github.com/tartale/go/pkg/errors"
 
 	"github.com/tartale/go-kitt/generators"
-	"github.com/tartale/go-kitt/generators/gokit/authz"
 	"github.com/tartale/go-kitt/generators/gokit/endpoint"
 	"github.com/tartale/go-kitt/generators/gokit/http"
 	"github.com/tartale/go-kitt/generators/gokit/logging"
@@ -14,7 +13,7 @@ func Generate(parsedSources generators.ParsedSourceData) error {
 
 	var errs errors.Errors
 
-	err := authz.Generate(parsedSources)
+	err := casbin.Generate(parsedSources)
 	if err != nil {
 		errs = append(errs, err)
 	}

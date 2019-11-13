@@ -1,0 +1,7 @@
+{{- $interface := .Interface }}
+{{- range $interface.Methods }}
+{{-     $method := . }}
+{{-     $shouldGenerate := ShouldGenerateAuthz $interface $method }}
+{{-     if $shouldGenerate }}
+{{-     end }}
+{{- end }}

@@ -24,7 +24,6 @@ func Decode{{ $method.Name }}Request(_ context.Context, r *http.Request) (interf
 }
 
 func Encode{{ $method.Name }}Response(_ context.Context, w http.ResponseWriter, response interface{}) error {
-  // TODO - use annotations to assign http headers, query params, and body to response
   return json.NewEncoder(w).Encode(response)
 }
 
