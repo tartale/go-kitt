@@ -30,11 +30,13 @@ func TemplateFuncs() template.FuncMap {
 
 		templateFuncs["annotation"] = annotation
 		templateFuncs["attribute"] = attribute
+		templateFuncs["authzEnforcement"] = authzEnforcement
 		templateFuncs["signature"] = signature
 		templateFuncs["toDeclarations"] = toDeclarations
 		templateFuncs["toStringAssignments"] = toStringAssignments
 		templateFuncs["names"] = names
 		templateFuncs["filtercontexts"] = filtercontexts
+		templateFuncs["firstcontext"] = firstcontext
 		templateFuncs["filtererrors"] = filtererrors
 		templateFuncs["firsterror"] = firsterror
 		templateFuncs["prefix"] = prefix
@@ -159,6 +161,22 @@ func attribute(name string, value interface{}) interface{} {
 	return value
 }
 
+func authzEnforcement(value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case annotationType.Annotation:
+		return modelx.AuthZEnforcement(v.Attributes)
+	case model.Operation:
+		annot := annotation(annotations.TypeAuthorization, v)
+		if annot != nil {
+			return authzEnforcement(annot)
+		}
+		return nil
+	}
+
+	return value
+}
+
 func signature(obj model.Operation) string {
 	toStrings := TemplateFuncs()["toStrings"].(func(interface{}) []string)
 	inputs := autoname("input", obj.InputArgs).([]model.Field)
@@ -191,9 +209,9 @@ func toStringAssignments(value interface{}) interface{} {
 
 	switch v := value.(type) {
 	case model.Field:
-		var dereferencer string
+		var result string
 		if v.IsPointer {
-			dereferencer = "*"
+			result := modelx.Assignment{Field: v, RHS: `fmt.Sprintf("%+v", ` + dereferencer + v.Name + ")"}
 		}
 		result := modelx.Assignment{Field: v, RHS: `fmt.Sprintf("%+v", ` + dereferencer + v.Name + ")"}
 		result.Field.Name = result.Field.Name + "String"
@@ -256,6 +274,19 @@ func filtercontexts(value interface{}) interface{} {
 	}
 
 	return value
+}
+
+func firstcontext(value interface{}) interface{} {
+
+	switch v := value.(type) {
+	case []model.Field:
+		for _, field := range v {
+			if field.TypeName == "context.Context" {
+				return field
+			}
+		}
+	}
+	return nil
 }
 
 func filtererrors(value interface{}) interface{} {

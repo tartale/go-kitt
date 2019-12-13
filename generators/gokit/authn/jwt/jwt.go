@@ -1,12 +1,13 @@
-package casbin
+package jwt
 
 import (
 	"path"
 	"text/template"
 
 	"github.com/MarcGrol/golangAnnotations/model"
-	"github.com/tartale/go-kitt/generators"
 	"github.com/tartale/go/pkg/errors"
+
+	"github.com/tartale/go-kitt/generators"
 )
 
 func Generate(parsedSourceData generators.ParsedSourceData) error {
@@ -15,8 +16,8 @@ func Generate(parsedSourceData generators.ParsedSourceData) error {
 	if err != nil {
 		return err
 	}
-	tmpl := template.New("casbin.tmpl").Funcs(generators.TemplateHelpers())
-	tmpl = template.Must(tmpl.ParseGlob(path.Join(thisDir, "casbin*tmpl")))
+	tmpl := template.New("jwt.tmpl").Funcs(generators.TemplateHelpers())
+	tmpl = template.Must(tmpl.ParseGlob(path.Join(thisDir, "jwt*tmpl")))
 
 	var errs errors.Errors
 	var generatedPaths generators.GeneratedPaths
@@ -28,7 +29,7 @@ func Generate(parsedSourceData generators.ParsedSourceData) error {
 			}{
 				Interface: intf,
 			}
-			generatedFilePath := generators.NewGeneratedPathForInterface(intf, "AuthzCasbin")
+			generatedFilePath := generators.NewGeneratedPathForInterface(intf, "AuthnJWT")
 			err := generators.GenerateFile(generatedFilePath, tmpl, data)
 			if err != nil {
 				errs = append(errs, err)

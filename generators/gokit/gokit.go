@@ -4,6 +4,7 @@ import (
 	"github.com/tartale/go/pkg/errors"
 
 	"github.com/tartale/go-kitt/generators"
+	"github.com/tartale/go-kitt/generators/gokit/authz/casbin"
 	"github.com/tartale/go-kitt/generators/gokit/endpoint"
 	"github.com/tartale/go-kitt/generators/gokit/http"
 	"github.com/tartale/go-kitt/generators/gokit/logging"

@@ -1,0 +1,31 @@
+{{- define "body"}}
+{{- $method := get . "Method" }}
+{{- $middlewareName := get . "MiddlewareName" }}
+{{- $namedInputArgs := $method.InputArgs | autoname "input" }}
+{{- $inputNameList := $namedInputArgs | names | join ", " }}
+{{- $namedOutputArgs := $method.OutputArgs | autoname "output" }}
+{{- $outputNameList := $namedOutputArgs | names | join ", " }}
+{{- $firstContext := $namedInputArgs | firstcontext }}
+{{- $firstError := $namedOutputArgs | firsterror }}
+{{- $authzEnforcement := $method | authzEnforcement }}
+func (mw {{$middlewareName}}) {{ $method | signature }} {
+
+	sub, {{$firstError.Name}} := mw.GetSubject({{$firstContext.Name}})
+	if {{$firstError.Name}} != nil {
+		return
+	}
+	{{$authzEnforcement.Assignments}}
+	ok, {{$firstError.Name}} := mw.Enforcer.EnforceSafe(sub, {{$authzEnforcement.Params}})
+	if {{$firstError.Name}} != nil {
+		return
+	}
+	if !ok {
+    {{$firstError.Name}} = kittcasbin.ErrUnauthorized
+		return
+	}
+
+  {{$outputNameList}} = mw.Next.{{$method.Name}}({{$inputNameList}})
+
+  return
+}
+{{ end }}

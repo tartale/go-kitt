@@ -6,13 +6,14 @@ package {{ $interface.PackageName }}
 
 import (
   "context"
-  "errors"
 
   "github.com/casbin/casbin"
+  kittcasbin "github.com/tartale/go-kitt/pkg/authz/casbin"
 )
 
 type {{$middlewareName}} struct {
-  Logger log.Logger
+  GetSubject kittcasbin.GetSubjectFunc
+  Enforcer   *casbin.Enforcer
   Next   {{$interface.Name}}
 }
 {{ end }}

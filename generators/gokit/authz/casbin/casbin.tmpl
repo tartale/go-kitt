@@ -1,7 +1,14 @@
 {{- $interface := .Interface }}
+{{- $generateHeader := true }}
+{{- $middlewareName := (print $interface.Name "AuthzCasbinMiddleware") }}
 {{- range $interface.Methods }}
 {{-     $method := . }}
 {{-     $shouldGenerate := ShouldGenerateAuthz $interface $method }}
 {{-     if $shouldGenerate }}
+{{-       if $generateHeader }}
+{{-         template "header" (dict "Interface" $interface "MiddlewareName" $middlewareName) }}
+{{-         $generateHeader = false }}
+{{-       end }}
+{{-       template "body" (dict "Method" $method "MiddlewareName" $middlewareName) }}
 {{-     end }}
 {{- end }}

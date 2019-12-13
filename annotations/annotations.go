@@ -8,11 +8,12 @@ import (
 )
 
 const (
-	TypeFramework      = "Framework"
-	ParamFrameworkName = "name"
-	TypeLogging        = "Logging"
-	TypeAuthorization  = "Authorization"
-	ParamEnforcement   = "enforcement"
+	TypeFramework         = "Framework"
+	ParamFrameworkName    = "name"
+	TypeLogging           = "Logging"
+	TypeAuthorization     = "Authorization"
+	ParamAuthorizationObj = "obj"
+	ParamAuthorizationAct = "act"
 )
 
 func frameworkNames() map[string]bool {
@@ -46,10 +47,10 @@ func Descriptors() []annotation.AnnotationDescriptor {
 
 		descriptors = append(descriptors, annotation.AnnotationDescriptor{
 			Name:       TypeAuthorization,
-			ParamNames: []string{ParamEnforcement},
+			ParamNames: []string{ParamAuthorizationObj, ParamAuthorizationAct},
 			Validator: func(annot annotation.Annotation) bool {
 				return annot.Name == TypeAuthorization &&
-					len(annot.Attributes) == 1
+					len(annot.Attributes) > 1
 			},
 		})
 
